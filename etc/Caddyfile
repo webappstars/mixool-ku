@@ -1,0 +1,65 @@
+:$PORT
+
+root * /usr/share/caddy
+file_server browse
+
+header {
+    X-Robots-Tag none
+    X-Content-Type-Options nosniff
+    X-Frame-Options DENY
+    Referrer-Policy no-referrer-when-downgrade
+}
+
+# 基礎認證：用於 StoreFiles 下載目錄
+basicauth /$AUUID/* {
+    $AUUID $MYUUID-HASH
+}
+
+# 1. VLESS xhttp 轉發 (對標 Nginx gRPC 最佳化配置)
+@xhttp_vless {
+    path /$AUUID-xhttp*
+}
+reverse_proxy @xhttp_vless unix//etc/caddy/xhttp {
+    max_buffer_size -1
+    flush_interval -1
+}
+
+# 2. VMESS WebSocket 轉發
+@websocket_xray_vmess {
+    header Connection *Upgrade*
+    header Upgrade    websocket
+    path /$AUUID-vmess
+}
+reverse_proxy @websocket_xray_vmess unix//etc/caddy/vmess
+
+# 3. VLESS WebSocket 轉發
+@websocket_xray_vless {
+    header Connection *Upgrade*
+    header Upgrade    websocket
+    path /$AUUID-vless
+}
+reverse_proxy @websocket_xray_vless unix//etc/caddy/vless
+
+# 4. Trojan WebSocket 轉發
+@websocket_xray_trojan {
+    header Connection *Upgrade*
+    header Upgrade    websocket
+    path /$AUUID-trojan
+}
+reverse_proxy @websocket_xray_trojan unix//etc/caddy/trojan
+
+# 5. Shadowsocks WebSocket 轉發 (轉發至 127.0.0.1:4234)
+@websocket_xray_ss {
+    header Connection *Upgrade*
+    header Upgrade    websocket
+    path /$AUUID-ss
+}
+reverse_proxy @websocket_xray_ss 127.0.0.1:4234
+
+# 6. Socks WebSocket 轉發 (轉發至 127.0.0.1:5234)
+@websocket_xray_socks {
+    header Connection *Upgrade*
+    header Upgrade    websocket
+    path /$AUUID-socks
+}
+reverse_proxy @websocket_xray_socks 127.0.0.1:5234
