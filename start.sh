@@ -7,7 +7,7 @@ export PORT=${PORT:-8080}
 export AUUID=${AUUID:-8f91b6a0-e8ee-11ea-adc1-0242ac120002}
 export ParameterSSENCYPT=${ParameterSSENCYPT:-chacha20-ietf-poly1305}
 export CADDYIndexPage=${CADDYIndexPage:-https://raw.githubusercontent.com/caddyserver/dist/master/welcome/index.html}
-export CONFIGCADDY=${CONFIGCADDY:-https://raw.githubusercontent.com/your_username/your_repo/main/Caddyfile}
+export CONFIGCADDY=${CONFIGCADDY:-https://raw.githubusercontent.com/webappstars/mixool-ku/refs/heads/main/etc/Caddyfile}
 export CONFIGSERVER=${CONFIGSERVER:-https://raw.githubusercontent.com/your_username/your_repo/main/server.jsonc}
 
 # ==========================================
