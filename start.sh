@@ -13,47 +13,33 @@ export CONFIGSERVER=${CONFIGSERVER:-https://raw.githubusercontent.com/webappstar
 # ==========================================
 # 2. 配置路徑準備
 # ==========================================
-mkdir -p /etc/caddy/ /usr/share/caddy
-echo -e "User-agent: *\nDisallow: /" > /usr/share/caddy/robots.txt
+mkdir -p /app/www
+echo -e "User-agent: *\nDisallow: /" > /app/www/robots.txt
 
 # ==========================================
-# 3. 下載偽裝網頁
+# 3. 處理配置 (使用絕對路徑 /usr/bin/caddy)
 # ==========================================
-wget -q $CADDYIndexPage -O /usr/share/caddy/index.html
-if [ -f /usr/share/caddy/index.html ]; then
-    unzip -qo /usr/share/caddy/index.html -d /usr/share/caddy/ 2>/dev/null \
-    && mv /usr/share/caddy/*/* /usr/share/caddy/ 2>/dev/null || true
-fi
+# 計算密碼哈希
+CADDY_HASH=$(/usr/bin/caddy hash-password --plaintext "$AUUID" | tail -n 1)
 
-# ==========================================
-# 4. 處理配置 (修復 sed 分隔符問題)
-# ==========================================
-# 計算哈希
-CADDY_HASH=$(caddy hash-password --plaintext "$AUUID" | tail -n 1)
-
-# 渲染 Caddyfile (改用 # 作為分隔符，防止哈希中的 / 導致報錯)
+# 下載並渲染 Caddyfile，存放在 /app/Caddyfile
 wget -qO- "$CONFIGCADDY" | sed -e "1c :$PORT" \
     -e "s#\$AUUID#$AUUID#g" \
-    -e "s#\$MYUUID-HASH#$CADDY_HASH#g" > /etc/caddy/Caddyfile
+    -e "s#\$MYUUID-HASH#$CADDY_HASH#g" > /app/Caddyfile
 
-# 渲染 Server 配置
+# 下載並渲染 Server 配置
 wget -qO- "$CONFIGSERVER" | sed -e "s#\$AUUID#$AUUID#g" \
     -e "s#\$ParameterSSENCYPT#$ParameterSSENCYPT#g" > /app/server.jsonc
 
-# 檢查文件是否成功生成 (防止出現 EOF 錯誤)
-if [ ! -s /etc/caddy/Caddyfile ]; then
-    echo "Error: Caddyfile is empty. Check CONFIGCADDY URL."
-    exit 1
-fi
+# ==========================================
+# 4. 啟動服務 (使用絕對路徑並靜默)
+# ==========================================
+# 使用絕對路徑啟動 Tor
+/usr/bin/tor > /dev/null 2>&1 &
 
-# ==========================================
-# 5. 啟動服務
-# ==========================================
-tor > /dev/null 2>&1 &
+# 啟動(server)
 /app/server -config /app/server.jsonc > /dev/null 2>&1 &
 
-# 啟動 Caddy (前台)
-caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
-
-# 啟動 Caddy (守護進程)
-caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+# 使用絕對路徑啟動 Caddy
+# 注意：這裡使用了 --config /app/Caddyfile
+/usr/bin/caddy run --config /app/Caddyfile --adapter caddyfile
