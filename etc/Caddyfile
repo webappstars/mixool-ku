@@ -10,16 +10,15 @@ header {
     Referrer-Policy no-referrer-when-downgrade
 }
 
-# 1. VLESS xhttp 轉發 (對標 Nginx gRPC 優化)
+# 1. VLESS xhttp 轉發
 @xhttp_vless {
     path /$AUUID-xhttp*
 }
 reverse_proxy @xhttp_vless unix//etc/caddy/xhttp {
-    max_buffer_size -1
     flush_interval -1
 }
 
-# 2. VMESS WebSocket 轉發 (至 server 服務)
+# 2. VMESS WebSocket 轉發
 @websocket_server_vmess {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -27,7 +26,7 @@ reverse_proxy @xhttp_vless unix//etc/caddy/xhttp {
 }
 reverse_proxy @websocket_server_vmess unix//etc/caddy/vmess
 
-# 3. VLESS WebSocket 轉發 (至 server 服務)
+# 3. VLESS WebSocket 轉發
 @websocket_server_vless {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -35,7 +34,7 @@ reverse_proxy @websocket_server_vmess unix//etc/caddy/vmess
 }
 reverse_proxy @websocket_server_vless unix//etc/caddy/vless
 
-# 4. Trojan WebSocket 轉發 (至 server 服務)
+# 4. Trojan WebSocket 轉發
 @websocket_server_trojan {
     header Connection *Upgrade*
     header Upgrade    websocket
