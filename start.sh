@@ -16,28 +16,44 @@ export CONFIGSERVER=${CONFIGSERVER:-https://raw.githubusercontent.com/webappstar
 mkdir -p /etc/caddy/ /usr/share/caddy
 echo -e "User-agent: *\nDisallow: /" > /usr/share/caddy/robots.txt
 
+# ==========================================
 # 3. 下載偽裝網頁
-wget $CADDYIndexPage -O /usr/share/caddy/index.html
+# ==========================================
+wget -q $CADDYIndexPage -O /usr/share/caddy/index.html
 if [ -f /usr/share/caddy/index.html ]; then
     unzip -qo /usr/share/caddy/index.html -d /usr/share/caddy/ 2>/dev/null \
     && mv /usr/share/caddy/*/* /usr/share/caddy/ 2>/dev/null || true
 fi
 
-# 4. 處理配置
-# 渲染 Caddyfile（包含基礎認證哈希）
-wget -qO- $CONFIGCADDY | sed -e "1c :$PORT" \
-    -e "s/\$AUUID/$AUUID/g" \
-    -e "s/\$MYUUID-HASH/$(caddy hash-password --plaintext $AUUID)/g" > /etc/caddy/Caddyfile
+# ==========================================
+# 4. 處理配置 (修復 sed 分隔符問題)
+# ==========================================
+# 計算哈希
+CADDY_HASH=$(caddy hash-password --plaintext "$AUUID" | tail -n 1)
 
-# 渲染 Server 配置並保存為 server.jsonc
-wget -qO- $CONFIGSERVER | sed -e "s/\$AUUID/$AUUID/g" \
-    -e "s/\$ParameterSSENCYPT/$ParameterSSENCYPT/g" > /app/server.jsonc
+# 渲染 Caddyfile (改用 # 作為分隔符，防止哈希中的 / 導致報錯)
+wget -qO- "$CONFIGCADDY" | sed -e "1c :$PORT" \
+    -e "s#\$AUUID#$AUUID#g" \
+    -e "s#\$MYUUID-HASH#$CADDY_HASH#g" > /etc/caddy/Caddyfile
 
+# 渲染 Server 配置
+wget -qO- "$CONFIGSERVER" | sed -e "s#\$AUUID#$AUUID#g" \
+    -e "s#\$ParameterSSENCYPT#$ParameterSSENCYPT#g" > /app/server.jsonc
+
+# 檢查文件是否成功生成 (防止出現 EOF 錯誤)
+if [ ! -s /etc/caddy/Caddyfile ]; then
+    echo "Error: Caddyfile is empty. Check CONFIGCADDY URL."
+    exit 1
+fi
+
+# ==========================================
 # 5. 啟動服務
+# ==========================================
 tor > /dev/null 2>&1 &
-
-# 使用 server 名字啟動核心程序
 /app/server -config /app/server.jsonc > /dev/null 2>&1 &
+
+# 啟動 Caddy (前台)
+caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 
 # 啟動 Caddy (守護進程)
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
