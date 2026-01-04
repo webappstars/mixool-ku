@@ -64,7 +64,7 @@ wget -qO- "$CONFIGSERVER" | sed -e "s#\$AUUID#$AUUID#g" \
 /usr/bin/tor > /dev/null 2>&1 &
 
 # 啟動核心服務 (Xray)
-/app/server -config /app/server.jsonc > /dev/null 2>&1 &
+/app/server -config /app/server.jsonc 
 
 # 啟動 Caddy (前台運行)
 $CADDY_BIN run --config /app/Caddyfile --adapter caddyfile
