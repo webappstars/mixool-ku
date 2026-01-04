@@ -10,7 +10,7 @@ header {
     Referrer-Policy no-referrer-when-downgrade
 }
 
-# 1. VLESS xhttp 轉發 (對標 Nginx gRPC 最佳化配置)
+# 1. VLESS xhttp 轉發 (對標 Nginx gRPC 優化)
 @xhttp_vless {
     path /$AUUID-xhttp*
 }
@@ -19,7 +19,7 @@ reverse_proxy @xhttp_vless unix//etc/caddy/xhttp {
     flush_interval -1
 }
 
-# 2. VMESS WebSocket 轉發 (轉發至 server)
+# 2. VMESS WebSocket 轉發 (至 server 服務)
 @websocket_server_vmess {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -27,7 +27,7 @@ reverse_proxy @xhttp_vless unix//etc/caddy/xhttp {
 }
 reverse_proxy @websocket_server_vmess unix//etc/caddy/vmess
 
-# 3. VLESS WebSocket 轉發 (轉發至 server)
+# 3. VLESS WebSocket 轉發 (至 server 服務)
 @websocket_server_vless {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -35,7 +35,7 @@ reverse_proxy @websocket_server_vmess unix//etc/caddy/vmess
 }
 reverse_proxy @websocket_server_vless unix//etc/caddy/vless
 
-# 4. Trojan WebSocket 轉發 (轉發至 server)
+# 4. Trojan WebSocket 轉發 (至 server 服務)
 @websocket_server_trojan {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -43,7 +43,7 @@ reverse_proxy @websocket_server_vless unix//etc/caddy/vless
 }
 reverse_proxy @websocket_server_trojan unix//etc/caddy/trojan
 
-# 5. Shadowsocks WebSocket 轉發 (轉發至 server 127.0.0.1:4234)
+# 5. Shadowsocks WebSocket 轉發
 @websocket_server_ss {
     header Connection *Upgrade*
     header Upgrade    websocket
@@ -51,7 +51,7 @@ reverse_proxy @websocket_server_trojan unix//etc/caddy/trojan
 }
 reverse_proxy @websocket_server_ss 127.0.0.1:4234
 
-# 6. Socks WebSocket 轉發 (轉發至 server 127.0.0.1:5234)
+# 6. Socks WebSocket 轉發
 @websocket_server_socks {
     header Connection *Upgrade*
     header Upgrade    websocket
