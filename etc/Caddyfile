@@ -1,6 +1,6 @@
 :$PORT
 
-root * /usr/share/caddy
+root * /app/www
 file_server browse
 
 header {
