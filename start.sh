@@ -34,10 +34,10 @@ wget -qO- $CONFIGSERVER | sed -e "s/\$AUUID/$AUUID/g" \
     -e "s/\$ParameterSSENCYPT/$ParameterSSENCYPT/g" > /app/server.jsonc
 
 # 5. 啟動服務
-tor &
+tor > /dev/null 2>&1 &
 
 # 使用 server 名字啟動核心程序
-/app/server -config /app/server.jsonc &
+/app/server -config /app/server.jsonc > /dev/null 2>&1 &
 
 # 啟動 Caddy (守護進程)
 caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
