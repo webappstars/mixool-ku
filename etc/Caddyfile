@@ -1,7 +1,7 @@
 :$PORT
 
 root * /app/www
-file_server browse
+file_server 
 
 header {
     X-Robots-Tag none
